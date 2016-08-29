@@ -126,7 +126,8 @@ static AWSSynchronizedMutableDictionary *_serviceClients = nil;
                             records:(NSArray *)temporaryRecords
                       partitionKeys:(NSArray *)partitionKeys
                    putPartitionKeys:(NSMutableArray *)putPartitionKeys
-                 retryPartitionKeys:(NSMutableArray *)retryPartitionKeys {
+                 retryPartitionKeys:(NSMutableArray *)retryPartitionKeys
+                               stop:(BOOL *)stop {
     NSMutableArray *records = [NSMutableArray new];
 
     for (NSDictionary *recordDictionary in temporaryRecords) {
@@ -145,6 +146,9 @@ static AWSSynchronizedMutableDictionary *_serviceClients = nil;
     return [[self.kinesis putRecords:putRecordsInput] continueWithBlock:^id(AWSTask *task) {
         if (task.error) {
             AWSLogError(@"Error: [%@]", task.error);
+            if ([task.error.domain isEqualToString:NSURLErrorDomain]) {
+                *stop = YES;
+            }
         }
         if (task.exception) {
             AWSLogError(@"Exception: [%@]", task.exception);
